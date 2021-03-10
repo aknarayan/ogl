@@ -7,7 +7,9 @@
 
 // GLFW handles window and keyboard
 #include <GLFW/glfw3.h>
-GLFWwindow* window;
+
+// provides functionality for loading shaders
+#include <common/shader.hpp>
 
 // maths library
 #include <glm/glm.hpp>
@@ -32,7 +34,7 @@ int main(void)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // we don't want old OpenGL
 
 	// open a window and create its OpenGL context
-	window = glfwCreateWindow(1024, 768, "Playground", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(1024, 768, "Playground", NULL, NULL);
 	if (window == NULL){
 		fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
 		getchar();
@@ -41,7 +43,7 @@ int main(void)
 	}
 	glfwMakeContextCurrent(window);
 
-	// Initialize GLEW
+	// initialize GLEW
 	if (glewInit() != GLEW_OK) {
 		fprintf(stderr, "Failed to initialize GLEW\n");
 		getchar();
@@ -49,7 +51,7 @@ int main(void)
 		return -1;
 	}
 
-	// Ensure we can capture the escape key being pressed below
+	// ensure we can capture the escape key being pressed below
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
 	// VertexArrayObject, VAO
@@ -57,7 +59,7 @@ int main(void)
 	glGenVertexArrays(1, &VertexArrayID);
 	glBindVertexArray(VertexArrayID);
 
-	// Array of 3 vectors, representing 3 vertices
+	// array of 3 vectors, representing 3 vertices
 	static const GLfloat g_vertex_buffer_data[] = {
 		-1.0f, -1.0f, 0.0f,
 		1.0f, -1.0f, 0.0f,
@@ -69,12 +71,15 @@ int main(void)
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW); // give vertices to OpenGL
 
-	// Dark blue background
+	// dark blue background
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
+	// create and compile GLSL program from shaders
+	GLuint programID = LoadShaders("simplevertexshader.glsl", "simplefragmentshader.glsl");
+
 	do {
-		// Clear the screen - can cause flickering
-		glClear(GL_COLOR_BUFFER_BIT);
+		// clear the screen - can cause flickering
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// 1st attribute buffer: vertices
 		glEnableVertexAttribArray(0);
@@ -88,18 +93,21 @@ int main(void)
 			(void*)0	// array buffer offset
 		);
 
-		// Draw triangle
+		// use shader
+		glUseProgram(programID);
+
+		// draw triangle
 		glDrawArrays(GL_TRIANGLES, 0, 3); // starting from vertex 0; 3 vertices total -> 1 triangle
 		glDisableVertexAttribArray(0);
 
-		// Swap buffers
+		// swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
-	} // Check if the ESC key was pressed or the window was closed
+	} // check if ESC key was pressed or the window was closed
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
 		   glfwWindowShouldClose(window) == 0);
 
-	// Close OpenGL window and terminate GLFW
+	// close OpenGL window and terminate GLFW
 	glfwTerminate();
 
 	return 0;
