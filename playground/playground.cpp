@@ -189,6 +189,12 @@ int main(void)
 		// use shader
 		glUseProgram(programID);
 
+		// enable depth test
+		glEnable(GL_DEPTH_TEST);
+		
+		// accept fragment if it closer to the camera than the former one (i.e. z-buffering)
+		glDepthFunc(GL_LESS);
+
 		// send transformation to currently bound shader, in the "MVP" uniform
 		// done in the loop as each model will have a different M matrix and therefore a different MVP matrix
 		glUniformMatrix4fv(matrixID, 1, GL_FALSE, &mvp[0][0]);
